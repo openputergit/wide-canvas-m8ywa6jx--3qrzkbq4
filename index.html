@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .task-card {
+            transition: all 0.3s ease;
+        }
+        .task-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Task Management System</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700">Email</label>
+                    <input type="email" id="email" class="w-full p-2 border rounded" required>
+                </div>
+                <div>
+                    <label class="block text-gray-700">Password</label>
+                    <input type="password" id="password" class="w-full p-2 border rounded" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="adminDashboard" class="hidden">
+        <nav class="bg-blue-600 text-white p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold">Admin Dashboard</h1>
+                <button onclick="logout()" class="bg-red-500 px-4 py-2 rounded">Logout</button>
+            </div>
+        </nav>
+
+        <div class="container mx-auto p-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-bold mb-4">Assign New Task</h2>
+                    <form id="taskForm" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700">Employee</label>
+                            <select id="employee" class="w-full p-2 border rounded" required>
+                                <option value="emp1">John Doe</option>
+                                <option value="emp2">Jane Smith</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Task Description</label>
+                            <textarea id="taskDesc" class="w-full p-2 border rounded" required></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Hours Allocation</label>
+                            <input type="number" id="hours" class="w-full p-2 border rounded" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Deadline</label>
+                            <input type="datetime-local" id="deadline" class="w-full p-2 border rounded" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700">Frequency</label>
+                            <select id="frequency" class="w-full p-2 border rounded">
+                                <option value="once">Once</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">
+                            Assign Task
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-bold mb-4">Task Overview</h2>
+                    <div id="taskList" class="space-y-4">
+                        <!-- Tasks will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="employeeDashboard" class="hidden">
+        <nav class="bg-green-600 text-white p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold">Employee Dashboard</h1>
+                <button onclick="logout()" class="bg-red-500 px-4 py-2 rounded">Logout</button>
+            </div>
+        </nav>
+
+        <div class="container mx-auto p-6">
+            <div id="employeeTasks" class="grid md:grid-cols-3 gap-6">
+                <!-- Employee tasks will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock user data
+        const users = {
+            'admin@example.com': { password: 'admin123', role: 'admin' },
+            'employee@example.com': { password: 'emp123', role: 'employee' }
+        };
+
+        // Mock tasks data
+        let tasks = [];
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (users[email] && users[email].password === password) {
+                document.getElementById('loginSection').classList.add('hidden');
+                if (users[email].role === 'admin') {
+                    document.getElementById('adminDashboard').classList.remove('hidden');
+                } else {
+                    document.getElementById('employeeDashboard').classList.remove('hidden');
+                    displayEmployeeTasks(email);
+                }
+            } else {
+                alert('Invalid credentials!');
+            }
+        });
+
+        document.getElementById('taskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const task = {
+                id: Date.now(),
+                employee: document.getElementById('employee').value,
+                description: document.getElementById('taskDesc').value,
+                hours: document.getElementById('hours').value,
+                deadline: document.getElementById('deadline').value,
+                frequency: document.getElementById('frequency').value,
+                status: 'pending'
+            };
+            tasks.push(task);
+            updateTaskList();
+            this.reset();
+        });
+
+        function updateTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-card bg-gray-50 p-4 rounded shadow';
+                taskElement.innerHTML = `
+                    <h3 class="font-bold">${task.employee}</h3>
+                    <p>${task.description}</p>
+                    <p class="text-sm text-gray-600">Hours: ${task.hours}</p>
+                    <p class="text-sm text-gray-600">Deadline: ${new Date(task.deadline).toLocaleString()}</p>
+                    <p class="text-sm text-gray-600">Frequency: ${task.frequency}</p>
+                    <p class="text-sm ${task.status === 'pending' ? 'text-yellow-600' : 'text-green-600'}">
+                        Status: ${task.status}
+                    </p>
+                `;
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        function displayEmployeeTasks(email) {
+            const employeeTasks = document.getElementById('employeeTasks');
+            employeeTasks.innerHTML = '';
+            const userTasks = tasks.filter(task => task.employee === email);
+            userTasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-card bg-white p-4 rounded shadow';
+                taskElement.innerHTML = `
+                    <h3 class="font-bold">${task.description}</h3>
+                    <p class="text-sm text-gray-600">Hours: ${task.hours}</p>
+                    <p class="text-sm text-gray-600">Deadline: ${new Date(task.deadline).toLocaleString()}</p>
+                    <p class="text-sm text-gray-600">Frequency: ${task.frequency}</p>
+                    <button onclick="completeTask(${task.id})" 
+                            class="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Mark Complete
+                    </button>
+                `;
+                employeeTasks.appendChild(taskElement);
+            });
+        }
+
+        function completeTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = 'completed';
+                displayEmployeeTasks(document.getElementById('email').value);
+            }
+        }
+
+        function logout() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('employeeDashboard').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        // Check for tasks that need reminders
+        setInterval(() => {
+            const now = new Date();
+            tasks.forEach(task => {
+                const deadline = new Date(task.deadline);
+                const timeDiff = deadline - now;
+                if (timeDiff > 0 && timeDiff <= 3600000) { // 1 hour before deadline
+                    alert(`Reminder: Task "${task.description}" is due in less than an hour!`);
+                }
+            });
+        }, 300000); // Check every 5 minutes
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
